@@ -1,133 +1,236 @@
-# RICOH THETA Plug-in SDK
+# RICOH THETA Plug-in Messaging App - Sending Love with THETA
 
-Version: 1.0.1
+_This article is translated by @jcasman from the original [here](https://qiita.com/ueue/items/ecb5032c923531a45408) (JAPANESE)._
 
-## Contents
+## Introduction
 
-* [Terms of Service](#terms)
-* [Files included in the archive](#files)
-* [Technical requirements for development](#requirements)
-* [Contents of the SDK](#contents)
-* [Getting Started](#started)
-* [Where to find the latest information](#information)
-* [Troubleshooting](#troubleshooting)
-* [Trademark Information](#trademark)
+Hello, this is [@ueue](https://qiita.com/ueue) from RICOH. I’m a middle aged man who doesn’t recover from  summertime fatigue till, oh, the end of the year. Do you tell your loved ones that you love them? If you are like me, sometimes it’s hard to say “I love you” directly to loved ones. So, I’ve made a plug-in to send a love note via the messaging service LINE using RICOH THETA. 
 
-<a name="terms"></a>
-## Terms of Service
+For this plug-in, set the THETA to wireless client mode and keep it connected to a network, then utilize the LINE messaging API to send out messages. 
 
-> You agree to comply with all applicable export and import laws and regulations applicable to the jurisdiction in which the Software was obtained and in which it is used. Without limiting the foregoing, in connection with use of the Software, you shall not export or re-export the Software  into any U.S. embargoed countries (currently including, but necessarily limited to, Crimea – Region of Ukraine, Cuba, Iran, North Korea, Sudan and Syria) or  to anyone on the U.S. Treasury Department’s list of Specially Designated Nationals or the U.S. Department of Commerce Denied Person’s List or Entity List.  By using the Software, you represent and warrant that you are not located in any such country or on any such list.  You also agree that you will not use the Software for any purposes prohibited by any applicable laws, including, without limitation, the development, design, manufacture or production of missiles, nuclear, chemical or biological weapons.
+This is the basic idea. 
 
-By using the RICOH THETA Plug-in SDK, you are agreeing to the above and the license terms, [LICENSE.txt](LICENSE.txt).
+![Sending%20I%20Love%20You%20Message%20through%20LINE|690x303](https://community.theta360.guide/uploads/default/original/2X/f/fee45749893bcc446d753067f5de059dd909202d.png)
 
-Copyright &copy; 2018 Ricoh Company, Ltd.
+For people wondering “What are plug-ins?” here is a quick explanation. The newest model (as of August 6, 2018), the RICOH THETA V, uses an Android-based OS, so functionality can be expanded by installing apps. In the world of THETA, apps are called plug-ins. 
 
-<a name="files"></a>
-## Files included in the archive
+If you are interested in developing plug-ins, [please register for the Partner Program](https://api.ricoh/products/theta-plugin/).
 
-```
-├── README.md:            This file
-├── LICENSE.txt:          Files concerning the contract
-├── app:                  Sample project
-├── build.gradle:         Android Studio build script
-├── gradle:               Android Studio build script
-├── gradle.properties:    Android Studio build script
-├── gradlew:              Android Studio build script
-├── gradlew.bat:          Android Studio build script
-├── pluginlibrary:        Plug-in library (utility program)
-└── settings.gradle:      Android Studio build script
-```
 
-<a name="requirements"></a>
-## Technical requirements for development
+A key point of this article, for development purposes, is connecting a THETA to a desktop computer using USB and Wi-Fi simultaneously. THETA is set not to be connected to Wi-Fi when connected to USB. However, this makes it hard to develop plug-ins that access the network. So, I’m going to introduce a trick that can only be used in developer mode that allows a THETA to be connected to both USB and Wi-Fi. 
 
-The SDK was tested with a RICOH THETA V under the following conditions.
+Here is what the development looks like when using this trick. 
 
-### Camera
+![development%20environment|671x382](https://community.theta360.guide/uploads/default/original/2X/c/c6294a5d001e48e4cd84563eb2874f92c7afa043.png)
 
-#### Hardware
+## Preparing the LINE Messaging API
 
-* RICOH THETA V
+Let’s prepare to send a message to LINE. From the [LINE Developer console](https://developers.line.me/en/), create a provider and channel and issue an access token (long term). For this procedure, I’ve referenced [this article](https://qiita.com/nkjm/items/38808bbc97d6927837cd) (JAPANESE). 
 
-#### Firmware
+When you are testing for yourself, write down the User ID, which is in the Developer console’s channel main settings. When you send a message to this User ID, the message is send to you. 
 
-* ver.2.30.1 and above
+When you want to send a message to your loved one, set up Webhook, use the QR code in the same channel main settings, guide the loved one to register to the channel (app) as a friend. As soon as your loved one is added as a friend, the loved one’s User ID will be sent to Webhook, so please write down the ID.
 
-    > Information on checking and updating the firmware is [here](https://theta360.com/en/support/manual/v/content/pc/pc_09.html).
+The way to send message from the created app is in [the Messaging API Reference called Sending Push Messages](https://developers.line.me/en/reference/messaging-api/#send-push-message).
 
-### Development Environment
+Below is how you can send message using the curl command.
 
-This SDK has been confirmed to operate under the following conditions.
+    curl -v -X POST https://api.line.me/v2/bot/message/push \
+    -H 'Content-Type:application/json' \
+    -H 'Authorization: Bearer <Access Token>' \
+    -d '{
+        "to": "<User ID>",
+        "messages":[
+            {
+                "type":"text",
+                "text":"I love you"
+            },
+            {
+                "type":"text",
+                "text":"I love you so much"
+            },
+            {
+              "type": "sticker",
+              "packageId": "1",
+              "stickerId": "409"
+            }
+        ]
+    }'
 
-#### Operating System
 
-* Windows 10 Version 1709
-* macOS High Sierra ver.10.13
+Input the access token issued above in `<access token>`, and input the User ID you wrote down in <User ID>. To test it first, input your User ID. 
 
-#### Development environment
+For Message Objects, please see [this link](https://developers.line.me/en/reference/messaging-api/#message-objects). 
 
-* Android&trade; Studio 3.1+
-* gradle 3.1.4
-* Android&trade; SDK (API Level 25)
-* compileSdkVersion 26
-* buildToolsVersion "27.0.3"
-* minSdkVersion 25
-* targetSdkVersion 25
+To send a stamp, input “sticker” for the type value, and input sticker ID and package ID for the stamp you want to send. For correspondence between stamps and package ID and sticker ID, please see [this list](https://developers.line.me/en/reference/messaging-api/#message-objects).
 
-<a name="contents"></a>
-## Contents of the SDK
+You’ve succeeded if you inputted the above curl command from a terminal and received a message on LINE. 
 
-* This SDK is a Plug-in sample project of Android&trade; Studio.
-* This SDK implements the basic parts necessary for developing plug-ins. You can create your own development project based on this project.
-* This SDK includes a plug-in library ([pluginlibrary](pluginlibrary)) to support plug-in development of RICOH THETA. The plug-in library is the main part of the SDK, with its own part of the RICOH THETA plug-in being consolidated.
-* The plug-in library implements the following functions that a standard plug-in should implement.
-    * Get button operation event
-    * Plug-in termination processing
-    * LED control
-    * Control of speaker
+## Connecting the THETA to a Network
 
-<a name="started"></a>
-## Getting Started
+It is possible to connect the THETA to a network, by switching THETA to wireless client mode. Please see “[Connecting to a Smartphone via Wireless LAN](https://theta360.com/en/support/manual/v/content/prepare/prepare_06.html)” for the procedure.
 
-1. Import plug-in sdk as a project into Android&trade; Studio.
-1. Please rewrite the sample program in app accordingly and create a program.
+## How to Activate THETA’s Wi-Fi While Connected to the USB
 
-    * By inheriting `PluginActivity` you will be able to use library methods.
+For development, connect the THETA to a desktop computer via USB. The Wi-Fi indicator will turn off when the THETA is connected. 
 
-        ```java
-        public class MainActivity extends PluginActivity {
+![No%20Wi-Fi|200x267](https://community.theta360.guide/uploads/default/original/2X/e/e72bd8f48909b4093f01d2af30a0a32e0b97c640.jpg)
+_No Wi-Fi - Compare to next image below_
+
+THETA is set so that Wi-Fi is unavailable while connected to USB. But this will make development more difficult for network connected plug-ins. However, in development mode, Wi-Fi becomes available while connected to USB using the command below. 
+
+`adb  shell settings put global usb_debug true`
+
+Disconnect USB from the THETA once, wait for Wi-Fi to become available, then connect the THETA to USB again. If the Wi-Fi indicator, which was off before, stays lit, then you have succeeded. 
+
+![Wi-Fi%20indicator%20on|200x267](https://community.theta360.guide/uploads/default/original/2X/9/985e972048f319039abc11edfb8ee2826a3d2552.png)
+_Wi-Fi indicator on_
+
+In this state, since USB and Wi-Fi connections are both available, it becomes possible to install an apk using Android Studio, and also confirm the network connection. 
+
+## Explanation of the Plug-in Code
+
+Below is the plug-in source code. 
+
+    package com.theta360.pluginapplication;
+
+    import android.os.AsyncTask;
+    import android.os.Bundle;
+    import android.util.Log;
+    import android.view.KeyEvent;
+
+    import com.theta360.pluginlibrary.activity.PluginActivity;
+    import com.theta360.pluginlibrary.callback.KeyCallback;
+
+    import java.io.IOException;
+    import java.io.OutputStream;
+    import java.net.HttpURLConnection;
+    import java.net.URL;
+
+    public class MainActivity extends PluginActivity {
+
+        @Override
+        protected void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+
+            setKeyCallback(new KeyCallback() {
+
+                @Override
+                public void onKeyDown(int keyCode, KeyEvent event) {
+                    new SendMessageTask().execute();
+                }
+
+                public void onKeyUp(int keyCode, KeyEvent event) {
+                }
+
+                public void onKeyLongPress(int keyCode, KeyEvent event) {
+                }
+            });
+        }
+
+        private static class SendMessageTask extends AsyncTask<Void, Void, Void> {
+
             @Override
-            protected void onCreate (Bundle savedInstanceState) {
-                super.onCreate (savedInstanceState);
-                setContentView (R.layout.activity_main);
-        ```
+            public Void doInBackground(Void... params) {
+                final String token = "<Access Token>";
+                final String user_id = "<User ID>";
 
-    * Please refer to [the web SDK document](https://api.ricoh/docs/theta-plugin/) for development precautions.
+                final String data = "{"
+                        + "\"to\":\""
+                        + user_id
+                        + "\","
+                        + "\"messages\":["
+                        + "{\"type\":\"text\",\"text\":\"I love you\"},"
+                        + "{\"type\":\"text\",\"text\":\"I love you so much\"},"
+                        + "{\"type\":\"sticker\",\"packageId\":\"1\",\"stickerId\":\"4\"}"
+                        + "]}";
+                try {
+                    final String url = "https://api2.line.me/v2/bot/message/push";
+                    HttpURLConnection connection = createConnection(url, token);
+                    sendData(data, connection);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
 
-1. Please connect RICOH THETA V with USB.
-1. By running it, installing and debuging is possible.
-1. To build for distribution, build *apk* with *Build APK (s)* in the Build menu.
+            private HttpURLConnection createConnection(String url, String token) throws IOException {
+                HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+                // Settings for connecting
+                connection.setRequestMethod("POST");
+                connection.setRequestProperty("Content-Type", "application/json");
+                connection.setRequestProperty("Authorization", "Bearer " + token);
+                connection.setRequestProperty("Accept", "application/json");
 
-<a name="information"></a>
-## Where to find the latest information
+                // Allows settings for return value from API and data to be sent
+                connection.setDoOutput(true);
 
-* The latest information is published on [the WEB site](https://api.ricoh/docs/theta-plugin/).
-* The latest SDK is released on [the GitHub project](https://github.com/ricohapi/theta-plugin-sdk).
+                return connection;
+            }
 
-<a name="troubleshooting"></a>
-## Troubleshooting
+            private void sendData(String data, HttpURLConnection connection) throws IOException {
+                try (OutputStream out = connection.getOutputStream()) {
+                    // Connecting
+                    connection.connect();
 
-If you have a request, create an issue on [the GitHub project](https://github.com/ricohapi/theta-plugin-sdk/issues).
+                    // Write data to be sent
+                    out.write(data.getBytes("UTF-8"));
+                    out.flush();
+                    connection.getResponseCode();
+                } finally {
+                    connection.disconnect();
+                }
+            }
+        }
+    }
 
-<a name="trademark"></a>
-## Trademark Information
+Here are some things to be careful of. 
 
-The names of products and services described in this document are trademarks or registered trademarks of each company.
+There was an error message when the official Messaging API domain was set to api.line.me in the API’s URL specified part, so it was switched to api2.line.me which was registered in CNAME.
 
-* Android, Nexus, Google Chrome, Google Play, Google Play logo, Google Maps, Google+, Gmail, Google Drive, Google Cloud Print and YouTube are trademarks of Google Inc.
-* Apple, Apple logo, Macintosh, Mac, Mac OS, OS X, AppleTalk, Apple TV, App Store, AirPrint, Bonjour, iPhone, iPad, iPad mini, iPad Air, iPod, iPod mini, iPod classic, iPod touch, iWork, Safari, the App Store logo, the AirPrint logo, Retina and iPad Pro are trademarks of Apple Inc., registered in the United States and other countries. The App Store is a service mark of Apple Inc.
-* Bluetooth Low Energy and Bluetooth are trademarks or registered trademarks of US Bluetooth SIG, INC., in the United States and other countries.
-* Microsoft, Windows, Windows Vista, Windows Live, Windows Media, Windows Server System, Windows Server, Excel, PowerPoint, Photosynth, SQL Server, Internet Explorer, Azure, Active Directory, OneDrive, Outlook, Wingdings, Hyper-V, Visual Basic, Visual C ++, Surface, SharePoint Server, Microsoft Edge, Active Directory, BitLocker, .NET Framework and Skype are registered trademarks or trademarks of Microsoft Corporation in the United States and other countries. The name of Skype, the trademarks and logos associated with it, and the "S" logo are trademarks of Skype or its affiliates.
-* Wi-Fi™, Wi-Fi Certified Miracast, Wi-Fi Certified logo, Wi-Fi Direct, Wi-Fi Protected Setup, WPA, WPA 2 and Miracast are trademarks of the Wi-Fi Alliance.
-* The official name of Windows is Microsoft Windows Operating System.
-* All other trademarks belong to their respective owners.
+`final String url = "https://api2.line.me/v2/bot/message/push";`
+
+I have re-written the access token’s value and User ID in this sample code. 
+
+    final String token = "<Access Token";
+    final String user_id = "<User ID>";
+
+For the parameters for the access token and User ID, I recommend setting up using the [5 steps shown here](https://theta360.com/en/support/manual/v/content/plugin/plugin_02.html).  (_Trans - This is the English version of the link included in the original article, but it is unclear if this is related information._)
+
+From the plug-in side, the Web server will start inside the plug-in [as described here](https://api.ricoh/docs/theta-plugin/how-to-use/#using-a-web-server). For how to implement, I am hoping someone else in [the RICOH THETA plug-in community](https://community.theta360.guide/c/theta-api-usage/plugin) will explain further.
+
+For handling exceptions, I’m not including that here, so please implement it on your own. 
+
+## Experimenting with Running the Plug-in
+
+I’m going to be a guinea pig and send the love note to my wife. First, I’m going to send her the QR code, in order to have her register with the created channel (app) as a friend. 
+
+![not-my-husband|280x500](https://community.theta360.guide/uploads/default/original/2X/2/2101370dfed680465241b9164181134b88acd1d7.png)
+
+Yikes. A stumble. She thinks I’m a fake. My wife is very careful about internet scams. I failed to have her register with the app as friend. (I went for reality, and didn’t tell my wife ahead of time that I was doing this. It backfired.)
+
+Since that didn’t work, I changed the User ID to me, and ran it. Here’s the screenshot. 
+
+![love%20you|280x500](https://community.theta360.guide/uploads/default/original/2X/1/12ebd42335f678381f69ca95e6fd6208ee72046c.png)
+
+So, that’s actually me sending a message to myself and replying to myself. Not quite as romantic as originally intended.
+
+I noticed that you cannot confirm if you got a reply or not with the THETA. (You can confirm using the Webhook’s URL.)
+
+I am planning to write a sequel to this article for a method to send 360 degrees images via LINE. LINE’s viewer is compatible of handling 360 degrees images, so I think that will look great. 
+
+## Conclusion
+
+* I’ve explained a way to connect a THETA in developer mode to a desktop computer via USB and Wi-Fi at the same time. 
+
+* I’ve created a plug-in to send LINE messages using a THETA connected to Wi-Fi. 
+
+* This is compatible not only to LINE but to other cloud service APIs. 
+
+If you are interested in THETA plug-in development, [please register for the partner program](https://www8.webcas.net/db/pub/ricoh/thetaplugin/create/input)! 
+
+Please be aware that the THETA with its serial number registered with the program will no longer be eligible for standard end-user support. 
+
+For detailed information regarding partner program please see [here](https://api.ricoh/products/theta-plugin/).
+
+The registration form is [here](https://www8.webcas.net/db/pub/ricoh/thetaplugin/create/input).
