@@ -234,3 +234,5 @@ Please be aware that the THETA with its serial number registered with the progra
 For detailed information regarding partner program please see [here](https://api.ricoh/products/theta-plugin/).
 
 The registration form is [here](https://www8.webcas.net/db/pub/ricoh/thetaplugin/create/input).
+
+![Analytics](https://ga-beacon.appspot.com/UA-73311422-5/messaging)
